@@ -3,6 +3,24 @@ const FAQ = require("../models/faqModel");
 const { translateText } = require("../services/translation");
 const { cacheResponse, getCachedResponse } = require("../services/cache");
 
+// Helper function for translations
+const createTranslations = async (question, answer) => {
+  const languages = ['hi', 'bn', 'es', 'fr', 'de', 'ja', 'ar', 'pt', 'ru', 'zh'];
+  const translations = {};
+
+  for (const lang of languages) {
+    try {
+      translations[`question_${lang}`] = await translateText(question, lang);
+      translations[`answer_${lang}`] = await translateText(answer, lang);
+    } catch (err) {
+      translations[`question_${lang}`] = question;
+      translations[`answer_${lang}`] = answer;
+    }
+  }
+
+  return translations;
+};
+
 exports.getFAQs = async (req, res) => {
   const { lang } = req.query;
   const cacheKey = `faqs_${lang}`;
@@ -11,10 +29,11 @@ exports.getFAQs = async (req, res) => {
     const cachedData = await getCachedResponse(cacheKey);
     if (cachedData) return res.json(cachedData);
 
-    const faqs = await FAQ.find({});
-    const translatedFaqs = faqs.map((faq) => ({
-      question: faq.translations[`question_${lang}`] || faq.question,
-      answer: faq.translations[`answer_${lang}`] || faq.answer,
+    const faqs = await FAQ.find({}).lean();
+    const translatedFaqs = faqs.map(faq => ({
+      ...faq,
+      question: faq.translations?.[`question_${lang}`] || faq.question,
+      answer: faq.translations?.[`answer_${lang}`] || faq.answer
     }));
 
     await cacheResponse(cacheKey, translatedFaqs);
@@ -33,13 +52,8 @@ exports.createFAQ = async (req, res) => {
   }
 
   try {
-    const translations = {
-      question_hi: await translateText(question, "hi"),
-      question_bn: await translateText(question, "bn"),
-      answer_hi: await translateText(answer, "hi"),
-      answer_bn: await translateText(answer, "bn"),
-    };
-
+    const translations = await createTranslations(question.trim(), answer.trim());
+    
     const newFAQ = new FAQ({ 
       question: question.trim(),
       answer: answer.trim(),
@@ -51,9 +65,7 @@ exports.createFAQ = async (req, res) => {
   } catch (err) {
     logger.error(`FAQ creation error: ${err.message}`);
     res.status(500).json({ 
-      message: err.message.startsWith('Translation') 
-        ? 'Translation service unavailable' 
-        : 'Server Error'
+      message: 'Server Error'
     });
   }
 };

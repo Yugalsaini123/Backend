@@ -19,7 +19,14 @@ const translate = new TranslateClient({
   },
 });
 
+// Add validation for supported languages
+const supportedLanguages = ['hi', 'bn', 'es', 'fr', 'de', 'ja', 'ar', 'pt', 'ru', 'zh'];
+
 exports.translateText = async (text, targetLang) => {
+  if (!supportedLanguages.includes(targetLang)) {
+    throw new Error(`Language ${targetLang} not supported`);
+  }
+
   try {
     const params = {
       Text: text,
