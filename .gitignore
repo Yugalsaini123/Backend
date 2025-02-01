@@ -1,0 +1,23 @@
+# Ignore environment variables file
+.env
+
+# Ignore node_modules directory
+node_modules/
+
+
+# Node modules
+node_modules/
+
+# Logs
+logs/
+*.log
+
+# Environment variables
+.env
+
+# npm lockfile
+package-lock.json
+
+# Docker
+docker-compose.override.yml
+docker-compose.yml
