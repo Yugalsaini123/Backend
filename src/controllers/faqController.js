@@ -30,13 +30,39 @@ exports.getFAQs = async (req, res) => {
     if (cachedData) return res.json(cachedData);
 
     const faqs = await FAQ.find({}).lean();
-    const translatedFaqs = faqs.map(faq => ({
-      ...faq,
-      question: faq.translations?.[`question_${lang}`] || faq.question,
-      answer: faq.translations?.[`answer_${lang}`] || faq.answer
-    }));
+    
+    // Log fetched FAQs for debugging
+    console.log('FAQs from DB:', faqs);
 
-    await cacheResponse(cacheKey, translatedFaqs);
+    const translatedFaqs = faqs.map(faq => {
+      // Handle default language (English)
+      if (lang === 'en') {
+        return {
+          ...faq,
+          question: faq.question, // Use root question
+          answer: faq.answer, // Use root answer
+        };
+      }
+
+      // Handle other languages
+      const translatedQuestion = faq.translations?.[`question_${lang}`] || faq.question;
+      const translatedAnswer = faq.translations?.[`answer_${lang}`] || faq.answer;
+
+      return {
+        ...faq,
+        question: translatedQuestion,
+        answer: translatedAnswer,
+      };
+    });
+
+    // Log transformed FAQs for debugging
+    console.log('Translated FAQs:', translatedFaqs);
+
+    // Only cache non-empty results
+    if (translatedFaqs.length > 0) {
+      await cacheResponse(cacheKey, translatedFaqs);
+    }
+
     res.json(translatedFaqs);
   } catch (err) {
     console.error("Error fetching FAQs:", err);
