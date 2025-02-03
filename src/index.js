@@ -11,6 +11,8 @@ const logger = require('./utils/logger');
 
 const dotenv = require('dotenv');
 dotenv.config();
+const app = express();
+const PORT = process.env.PORT || 5000;
 
 const corsOptions = {
   origin: 'https://faqtranslate.netlify.app', // Specify the allowed origin
@@ -18,9 +20,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
-const app = express();
-const PORT = process.env.PORT || 5000;
 
 app.options('*', cors());
 // Security middleware
