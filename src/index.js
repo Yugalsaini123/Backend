@@ -8,30 +8,26 @@ const redisClient = require('./config/redis');
 const faqRoutes = require('./routes/faqRoutes');
 const logger = require('./utils/logger');
 
-
 const dotenv = require('dotenv');
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Use CORS with the correct options
 const corsOptions = {
-  origin: 'https://faqtranslate.netlify.app', // Specify the allowed origin
+  origin: process.env.NODE_ENV === 'production' 
+    ? 'https://faqtranslate.netlify.app' 
+    : ['http://localhost:3000', 'http://localhost:5173'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
   optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
 
-app.options('*', cors());
 // Security middleware
 app.use(helmet());
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL 
-    : ['http://localhost:3000', 'http://localhost:5173'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
